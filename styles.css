@@ -21,6 +21,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -91,10 +95,18 @@ button:focus-visible {
 }
 
 .access-gate {
-  min-height: 100vh;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
   display: grid;
   align-items: center;
   justify-items: center;
+  min-height: 100vh;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at top left, rgba(86, 220, 255, 0.16), transparent 30rem),
+    radial-gradient(circle at bottom right, rgba(255, 216, 77, 0.08), transparent 28rem),
+    linear-gradient(145deg, var(--navy), var(--navy-deep) 72%);
   padding: 28px 16px;
 }
 

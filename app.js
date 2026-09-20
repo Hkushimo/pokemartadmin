@@ -32,6 +32,9 @@ const elements = {
   saveFrame: document.querySelector("#save-frame")
 };
 
+elements.adminShell.hidden = true;
+elements.accessGate.hidden = false;
+
 function normalizeHeader(value) {
   return String(value || "")
     .toLowerCase()
