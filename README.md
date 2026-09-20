@@ -18,7 +18,7 @@ The app can load vendor rows without the Apps Script URL, but saving changes and
 - The vendor tab is detected by headers containing `Email`, `Tables`, and a Wi-Fi code column.
 - The unused codes tab is detected by a tab name containing `Unused` or `Code`.
 - Vendor search matches business name, alias, email, table numbers, and Wi-Fi codes.
-- Marking a code used formats that code row light red in the sheet.
-- Marking a code unused formats that code row light green in the sheet.
-- The app reads the row color to decide whether an unused-code entry is currently used; it does not need a `Used` column.
-- If an older `Used`, `Is Used`, or `Redeemed` column exists, the Apps Script migrates those values into row colors and deletes that legacy column.
+- Marking a code used grays it out in the app and strikes through that row in the sheet.
+- Marking a code unused removes the app gray state and removes strikethrough from that row in the sheet.
+- The app reads row strikethrough to decide whether an unused-code entry is currently used; it does not need a `Used` column.
+- If an older `Used`, `Is Used`, or `Redeemed` column or old red/green row color exists, the Apps Script migrates it into strikethrough and clears the legacy status styling.

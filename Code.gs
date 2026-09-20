@@ -1,6 +1,6 @@
 const SPREADSHEET_ID = '1Wl5Ta7PvSiAaX8VZ9N5Fu2IPd2RBCS3yrOCGYUegzE8';
-const UNUSED_CODE_COLOR = '#d9ead3';
-const USED_CODE_COLOR = '#f4cccc';
+const LEGACY_UNUSED_CODE_COLOR = '#d9ead3';
+const LEGACY_USED_CODE_COLOR = '#f4cccc';
 
 function doGet(event) {
   const action = event.parameter.action || 'loadAll';
@@ -30,7 +30,7 @@ function loadAll() {
     const vendorSheet = findVendorSheet_(spreadsheet);
     const codeSheet = findCodeSheet_(spreadsheet);
     if (codeSheet) {
-      migrateLegacyUsedColumn_(codeSheet);
+      migrateLegacyCodeStatus_(codeSheet);
     }
 
     return {
@@ -90,19 +90,16 @@ function readCodes_(sheet) {
   const noteColumn = firstHeader_(map, ['note', 'notes', 'assignedto', 'vendor', 'email']);
   const lastRow = Math.max(sheet.getLastRow(), 1);
   const lastColumn = Math.max(sheet.getLastColumn(), 1);
-  const backgrounds = lastRow > 1
-    ? sheet.getRange(2, 1, lastRow - 1, lastColumn).getBackgrounds()
+  const fontLines = lastRow > 1
+    ? sheet.getRange(2, 1, lastRow - 1, lastColumn).getFontLines()
     : [];
 
   return values.slice(1)
     .map((row, index) => {
-      const rowColors = backgrounds[index] || [];
-      const hasColorState = rowColorIsUsed_(rowColors) || rowColorIsUnused_(rowColors);
-
       return {
         rowNumber: index + 2,
         code: row[codeColumn] || '',
-        used: hasColorState ? rowColorIsUsed_(rowColors) : false,
+        used: rowIsStruck_(fontLines[index] || []),
         note: noteColumn === undefined ? '' : row[noteColumn] || ''
       };
     })
@@ -131,7 +128,7 @@ function updateVendors_(sheet, vendors) {
 }
 
 function updateCodes_(sheet, codes) {
-  migrateLegacyUsedColumn_(sheet);
+  migrateLegacyCodeStatus_(sheet);
   const lastColumn = Math.max(sheet.getLastColumn(), 1);
 
   codes.forEach((code) => {
@@ -142,8 +139,8 @@ function updateCodes_(sheet, codes) {
 
     const used = Boolean(code.used);
     const rowRange = sheet.getRange(rowNumber, 1, 1, lastColumn);
-    rowRange.setBackground(used ? USED_CODE_COLOR : UNUSED_CODE_COLOR);
-    rowRange.setFontLine('none');
+    rowRange.setBackground(null);
+    rowRange.setFontLine(used ? 'line-through' : 'none');
   });
 }
 
@@ -168,26 +165,33 @@ function findCodeSheet_(spreadsheet) {
   }) || null;
 }
 
-function migrateLegacyUsedColumn_(sheet) {
+function migrateLegacyCodeStatus_(sheet) {
   const values = dataValues_(sheet);
   const headers = values[0] || [];
   const map = headerMap_(headers);
   const legacyUsedColumn = firstHeader_(map, ['used', 'isused', 'redeemed']);
-  if (legacyUsedColumn === undefined) {
-    return;
-  }
-
   const lastRow = Math.max(sheet.getLastRow(), 1);
   const lastColumn = Math.max(sheet.getLastColumn(), 1);
   if (lastRow > 1) {
+    const backgrounds = sheet.getRange(2, 1, lastRow - 1, lastColumn).getBackgrounds();
     values.slice(1).forEach((row, index) => {
       const rowNumber = index + 2;
-      const used = truthy_(row[legacyUsedColumn]);
-      sheet.getRange(rowNumber, 1, 1, lastColumn).setBackground(used ? USED_CODE_COLOR : UNUSED_CODE_COLOR);
+      const rowColors = backgrounds[index] || [];
+      const used = legacyUsedColumn !== undefined
+        ? truthy_(row[legacyUsedColumn])
+        : rowColorIsUsed_(rowColors);
+
+      const rowRange = sheet.getRange(rowNumber, 1, 1, lastColumn);
+      if (legacyUsedColumn !== undefined || rowColorIsUsed_(rowColors) || rowColorIsUnused_(rowColors)) {
+        rowRange.setFontLine(used ? 'line-through' : 'none');
+        rowRange.setBackground(null);
+      }
     });
   }
 
-  sheet.deleteColumn(legacyUsedColumn + 1);
+  if (legacyUsedColumn !== undefined) {
+    sheet.deleteColumn(legacyUsedColumn + 1);
+  }
 }
 
 function dataValues_(sheet) {
@@ -232,12 +236,16 @@ function truthy_(value) {
   return ['true', 'yes', 'y', '1', 'used'].includes(String(value || '').trim().toLowerCase());
 }
 
+function rowIsStruck_(fontLines) {
+  return fontLines.some((fontLine) => String(fontLine || '').toLowerCase() === 'line-through');
+}
+
 function rowColorIsUsed_(colors) {
-  return colors.some((color) => normalizeColor_(color) === USED_CODE_COLOR);
+  return colors.some((color) => normalizeColor_(color) === LEGACY_USED_CODE_COLOR);
 }
 
 function rowColorIsUnused_(colors) {
-  return colors.some((color) => normalizeColor_(color) === UNUSED_CODE_COLOR);
+  return colors.some((color) => normalizeColor_(color) === LEGACY_UNUSED_CODE_COLOR);
 }
 
 function normalizeColor_(color) {

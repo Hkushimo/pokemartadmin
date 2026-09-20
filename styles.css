@@ -14,8 +14,6 @@
   --gold: #ffd84d;
   --gold-deep: #f2b91f;
   --success: #94ffc9;
-  --unused-bg: #d9ead3;
-  --used-bg: #f4cccc;
   --danger: #ffc4c4;
 }
 
@@ -282,14 +280,19 @@ tbody tr.changed {
   align-items: start;
   border: 1px solid rgba(120, 190, 255, 0.28);
   border-radius: 8px;
-  background: var(--unused-bg);
-  color: #0d2714;
+  background: rgba(3, 15, 31, 0.42);
+  color: #ffffff;
   padding: 12px;
 }
 
 .code-item.used {
-  background: var(--used-bg);
-  color: #3d1010;
+  opacity: 0.52;
+  background: rgba(3, 15, 31, 0.72);
+  color: var(--muted);
+}
+
+.code-item.used .code-text {
+  text-decoration: line-through;
 }
 
 .code-item input {
@@ -309,7 +312,7 @@ tbody tr.changed {
 .code-note {
   display: block;
   margin-top: 4px;
-  color: rgba(0, 0, 0, 0.62);
+  color: var(--muted);
   font-size: 0.9rem;
 }
 
