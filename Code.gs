@@ -29,6 +29,9 @@ function loadAll() {
     const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
     const vendorSheet = findVendorSheet_(spreadsheet);
     const codeSheet = findCodeSheet_(spreadsheet);
+    if (codeSheet) {
+      migrateLegacyUsedColumn_(codeSheet);
+    }
 
     return {
       ok: true,
@@ -84,7 +87,6 @@ function readCodes_(sheet) {
   const headers = values[0] || [];
   const map = headerMap_(headers);
   const codeColumn = firstHeader_(map, ['code', 'wificode', 'wifiaccesscode', 'wifiaccesscodes']) || 0;
-  const legacyUsedColumn = firstHeader_(map, ['used', 'isused', 'redeemed']);
   const noteColumn = firstHeader_(map, ['note', 'notes', 'assignedto', 'vendor', 'email']);
   const lastRow = Math.max(sheet.getLastRow(), 1);
   const lastColumn = Math.max(sheet.getLastColumn(), 1);
@@ -100,7 +102,7 @@ function readCodes_(sheet) {
       return {
         rowNumber: index + 2,
         code: row[codeColumn] || '',
-        used: hasColorState ? rowColorIsUsed_(rowColors) : legacyUsedColumn !== undefined && truthy_(row[legacyUsedColumn]),
+        used: hasColorState ? rowColorIsUsed_(rowColors) : false,
         note: noteColumn === undefined ? '' : row[noteColumn] || ''
       };
     })
@@ -129,6 +131,7 @@ function updateVendors_(sheet, vendors) {
 }
 
 function updateCodes_(sheet, codes) {
+  migrateLegacyUsedColumn_(sheet);
   const lastColumn = Math.max(sheet.getLastColumn(), 1);
 
   codes.forEach((code) => {
@@ -163,6 +166,28 @@ function findCodeSheet_(spreadsheet) {
     const headers = firstRow_(sheet).map(normalizeHeader_);
     return name.includes('unused') || (name.includes('code') && headers.some((header) => header.includes('code')));
   }) || null;
+}
+
+function migrateLegacyUsedColumn_(sheet) {
+  const values = dataValues_(sheet);
+  const headers = values[0] || [];
+  const map = headerMap_(headers);
+  const legacyUsedColumn = firstHeader_(map, ['used', 'isused', 'redeemed']);
+  if (legacyUsedColumn === undefined) {
+    return;
+  }
+
+  const lastRow = Math.max(sheet.getLastRow(), 1);
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  if (lastRow > 1) {
+    values.slice(1).forEach((row, index) => {
+      const rowNumber = index + 2;
+      const used = truthy_(row[legacyUsedColumn]);
+      sheet.getRange(rowNumber, 1, 1, lastColumn).setBackground(used ? USED_CODE_COLOR : UNUSED_CODE_COLOR);
+    });
+  }
+
+  sheet.deleteColumn(legacyUsedColumn + 1);
 }
 
 function dataValues_(sheet) {

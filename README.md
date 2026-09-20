@@ -21,3 +21,4 @@ The app can load vendor rows without the Apps Script URL, but saving changes and
 - Marking a code used formats that code row light red in the sheet.
 - Marking a code unused formats that code row light green in the sheet.
 - The app reads the row color to decide whether an unused-code entry is currently used; it does not need a `Used` column.
+- If an older `Used`, `Is Used`, or `Redeemed` column exists, the Apps Script migrates those values into row colors and deletes that legacy column.
