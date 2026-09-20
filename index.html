@@ -4,10 +4,28 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Pokemart Expo Admin</title>
-    <link rel="stylesheet" href="styles.css?v=strike-used-v3">
+    <link rel="stylesheet" href="styles.css?v=admin-access-v1">
   </head>
   <body>
-    <main class="shell">
+    <section id="access-gate" class="access-gate" aria-labelledby="access-title">
+      <div class="access-card">
+        <div class="brand">
+          <img src="assets/pokemart-expo.png" alt="Pokemart Expo">
+          <div>
+            <p class="eyebrow">Pokemart Expo</p>
+            <h1 id="access-title">Admin Access</h1>
+          </div>
+        </div>
+        <form id="access-form" class="access-form">
+          <label for="access-code">Enter admin access code</label>
+          <input id="access-code" name="accessCode" type="password" autocomplete="current-password" required>
+          <button type="submit">Unlock Admin</button>
+        </form>
+        <p id="access-status" class="access-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <main id="admin-shell" class="shell" hidden>
       <header class="topbar">
         <div class="brand">
           <img src="assets/pokemart-expo.png" alt="Pokemart Expo">
@@ -76,10 +94,11 @@
     <iframe id="save-frame" name="save-frame" title="Sheet save target" hidden></iframe>
     <form id="save-form" method="post" target="save-frame" hidden>
       <input name="action" value="saveAll">
+      <input id="save-access-code" name="accessCode">
       <input id="payload-input" name="payload">
     </form>
 
-    <script src="config.js?v=strike-used-v3"></script>
-    <script src="app.js?v=strike-used-v3"></script>
+    <script src="config.js?v=admin-access-v1"></script>
+    <script src="app.js?v=admin-access-v1"></script>
   </body>
 </html>

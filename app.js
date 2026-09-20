@@ -6,11 +6,17 @@ const state = {
   vendors: [],
   codes: [],
   vendorSearch: "",
+  accessCode: window.sessionStorage.getItem("pokemartAdminAccessCode") || "",
   dirtyVendorRows: new Set(),
   dirtyCodeRows: new Set()
 };
 
 const elements = {
+  accessGate: document.querySelector("#access-gate"),
+  adminShell: document.querySelector("#admin-shell"),
+  accessForm: document.querySelector("#access-form"),
+  accessCode: document.querySelector("#access-code"),
+  accessStatus: document.querySelector("#access-status"),
   status: document.querySelector("#status-message"),
   dirtyCount: document.querySelector("#dirty-count"),
   saveButton: document.querySelector("#save-button"),
@@ -21,6 +27,7 @@ const elements = {
   codeList: document.querySelector("#code-list"),
   codeCount: document.querySelector("#code-count"),
   saveForm: document.querySelector("#save-form"),
+  saveAccessCode: document.querySelector("#save-access-code"),
   payloadInput: document.querySelector("#payload-input"),
   saveFrame: document.querySelector("#save-frame")
 };
@@ -178,7 +185,7 @@ function loadSheetRows(url, timeoutMs = 10000) {
   });
 }
 
-function loadJsonp(url, timeoutMs = 15000) {
+function loadJsonp(url, accessCode, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
     const callbackName = `pokemartAdmin${Date.now()}${Math.random().toString(16).slice(2)}`;
     const script = document.createElement("script");
@@ -218,7 +225,7 @@ function loadJsonp(url, timeoutMs = 15000) {
     };
 
     const separator = url.includes("?") ? "&" : "?";
-    script.src = `${url}${separator}action=loadAll&callback=${callbackName}&cacheBust=${Date.now()}`;
+    script.src = `${url}${separator}action=loadAll&accessCode=${encodeURIComponent(accessCode)}&callback=${callbackName}&cacheBust=${Date.now()}`;
     document.head.append(script);
   });
 }
@@ -228,7 +235,7 @@ async function loadData() {
   elements.saveButton.disabled = true;
 
   if (config.scriptUrl) {
-    const payload = await loadJsonp(config.scriptUrl);
+    const payload = await loadJsonp(config.scriptUrl, state.accessCode);
     if (!payload.ok) {
       throw new Error(payload.error || "The admin backend could not load sheet data.");
     }
@@ -253,6 +260,37 @@ async function loadData() {
 
 function setStatus(message) {
   elements.status.textContent = message;
+}
+
+function setAccessStatus(message, type = "error") {
+  elements.accessStatus.textContent = message;
+  elements.accessStatus.className = `access-status ${type === "success" ? "success" : ""}`;
+}
+
+function showAccessGate(message = "") {
+  elements.adminShell.hidden = true;
+  elements.accessGate.hidden = false;
+  if (message) {
+    setAccessStatus(message);
+  }
+}
+
+function showAdmin() {
+  elements.accessGate.hidden = true;
+  elements.adminShell.hidden = false;
+}
+
+async function unlockAdmin(accessCode) {
+  state.accessCode = accessCode.trim();
+  if (!state.accessCode) {
+    throw new Error("Enter the admin access code.");
+  }
+
+  setAccessStatus("Checking access...", "success");
+  await loadData();
+  window.sessionStorage.setItem("pokemartAdminAccessCode", state.accessCode);
+  showAdmin();
+  setAccessStatus("");
 }
 
 function updateDirtyState() {
@@ -419,6 +457,7 @@ function saveChanges() {
   }
 
   elements.payloadInput.value = JSON.stringify(payloadForSave());
+  elements.saveAccessCode.value = state.accessCode;
   elements.saveForm.action = config.scriptUrl;
   setStatus("Pushing changes to Google Sheets...");
   elements.saveButton.disabled = true;
@@ -445,6 +484,14 @@ elements.refreshButton.addEventListener("click", () => {
     setStatus(error.message);
   });
 });
+elements.accessForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  unlockAdmin(elements.accessCode.value).catch((error) => {
+    console.error(error);
+    window.sessionStorage.removeItem("pokemartAdminAccessCode");
+    showAccessGate(error.message);
+  });
+});
 elements.vendorSearch.addEventListener("input", () => {
   state.vendorSearch = elements.vendorSearch.value.trim();
   renderVendors();
@@ -460,7 +507,13 @@ document.querySelectorAll(".tab").forEach((tab) => {
   });
 });
 
-loadData().catch((error) => {
-  console.error(error);
-  setStatus(error.message);
-});
+if (state.accessCode) {
+  elements.accessCode.value = state.accessCode;
+  unlockAdmin(state.accessCode).catch((error) => {
+    console.error(error);
+    window.sessionStorage.removeItem("pokemartAdminAccessCode");
+    showAccessGate(error.message);
+  });
+} else {
+  showAccessGate();
+}
