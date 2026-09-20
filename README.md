@@ -1,20 +1,25 @@
 # Pokemart Expo Admin
 
-Static GitHub Pages admin app for the Pokemart Expo vendor sheet.
+Static Cloudflare Pages admin app for the Pokemart Expo vendor sheet.
 
 ## Setup
 
-1. Open the Google Sheet.
-2. Go to `Extensions > Apps Script`.
-3. Paste the contents of `Code.gs`.
-4. Deploy it as a web app.
-5. Set access to the account that should update the sheet.
-6. Copy the web app URL into `config.js` as `scriptUrl`.
-7. Set the browser-level admin passcode in `config.js` as `passcode`.
+1. Create a Cloudflare Pages project from this repo.
+2. Set the build command to blank and the output directory to `/`.
+3. Add a custom domain for the admin site, such as `admin.pokemartexpo.com`.
+4. Add Cloudflare Pages environment variables:
+   - `ADMIN_USERNAME`
+   - `ADMIN_PASSWORD`
+5. Open the Google Sheet.
+6. Go to `Extensions > Apps Script`.
+7. Paste the contents of `Code.gs`.
+8. Deploy it as a web app.
+9. Set access to the account that should update the sheet.
+10. Copy the web app URL into `config.js` as `scriptUrl`.
 
 After changing `Code.gs`, create a new Apps Script deployment version so the live web app uses the latest backend code.
 
-The passcode is checked in the browser, so it keeps casual visitors from seeing the admin screen but is not secure backend authorization.
+Cloudflare Pages middleware protects the admin site with HTTP Basic Auth, which creates the browser username/password popup before the app loads.
 
 The app can load vendor rows without the Apps Script URL, but saving changes and loading the unused codes tab require the web app.
 

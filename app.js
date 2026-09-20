@@ -6,17 +6,11 @@ const state = {
   vendors: [],
   codes: [],
   vendorSearch: "",
-  accessCode: window.sessionStorage.getItem("pokemartAdminAccessCode") || "",
   dirtyVendorRows: new Set(),
   dirtyCodeRows: new Set()
 };
 
 const elements = {
-  accessGate: document.querySelector("#access-gate"),
-  adminShell: document.querySelector("#admin-shell"),
-  accessForm: document.querySelector("#access-form"),
-  accessCode: document.querySelector("#access-code"),
-  accessStatus: document.querySelector("#access-status"),
   status: document.querySelector("#status-message"),
   dirtyCount: document.querySelector("#dirty-count"),
   saveButton: document.querySelector("#save-button"),
@@ -30,9 +24,6 @@ const elements = {
   payloadInput: document.querySelector("#payload-input"),
   saveFrame: document.querySelector("#save-frame")
 };
-
-elements.adminShell.hidden = true;
-elements.accessGate.hidden = false;
 
 function normalizeHeader(value) {
   return String(value || "")
@@ -264,46 +255,6 @@ function setStatus(message) {
   elements.status.textContent = message;
 }
 
-function setAccessStatus(message, type = "error") {
-  elements.accessStatus.textContent = message;
-  elements.accessStatus.className = `access-status ${type === "success" ? "success" : ""}`;
-}
-
-function showAccessGate(message = "") {
-  elements.adminShell.hidden = true;
-  elements.accessGate.hidden = false;
-  if (message) {
-    setAccessStatus(message);
-  }
-}
-
-function showAdmin() {
-  elements.accessGate.hidden = true;
-  elements.adminShell.hidden = false;
-}
-
-async function unlockAdmin(accessCode) {
-  state.accessCode = accessCode.trim();
-  if (!state.accessCode) {
-    throw new Error("Enter the admin access code.");
-  }
-
-  const expectedPasscode = String(config.passcode || "").trim();
-  if (!expectedPasscode) {
-    throw new Error("Admin passcode is not configured in config.js.");
-  }
-
-  if (state.accessCode !== expectedPasscode) {
-    throw new Error("Invalid admin passcode.");
-  }
-
-  setAccessStatus("Checking access...", "success");
-  await loadData();
-  window.sessionStorage.setItem("pokemartAdminAccessCode", state.accessCode);
-  showAdmin();
-  setAccessStatus("");
-}
-
 function updateDirtyState() {
   const count = state.dirtyVendorRows.size + state.dirtyCodeRows.size;
   elements.dirtyCount.textContent = count ? `${count} unsaved change${count === 1 ? "" : "s"}` : "No changes";
@@ -494,14 +445,6 @@ elements.refreshButton.addEventListener("click", () => {
     setStatus(error.message);
   });
 });
-elements.accessForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  unlockAdmin(elements.accessCode.value).catch((error) => {
-    console.error(error);
-    window.sessionStorage.removeItem("pokemartAdminAccessCode");
-    showAccessGate(error.message);
-  });
-});
 elements.vendorSearch.addEventListener("input", () => {
   state.vendorSearch = elements.vendorSearch.value.trim();
   renderVendors();
@@ -517,13 +460,7 @@ document.querySelectorAll(".tab").forEach((tab) => {
   });
 });
 
-if (state.accessCode) {
-  elements.accessCode.value = state.accessCode;
-  unlockAdmin(state.accessCode).catch((error) => {
-    console.error(error);
-    window.sessionStorage.removeItem("pokemartAdminAccessCode");
-    showAccessGate(error.message);
-  });
-} else {
-  showAccessGate();
-}
+loadData().catch((error) => {
+  console.error(error);
+  setStatus(error.message);
+});
