@@ -10,7 +10,7 @@ Static GitHub Pages admin app for the Pokemart Expo vendor sheet.
 4. Deploy it as a web app.
 5. Set access to the account that should update the sheet.
 6. Copy the web app URL into `config.js` as `scriptUrl`.
-7. In the portal spreadsheet, open the `Settings` tab and set the `admin_access_code` value. The admin page will not load sheet contents until that code is entered.
+7. In the portal spreadsheet, open the `Settings` tab and put the admin access code in `B7`. The admin page will not load sheet contents until that code is entered.
 
 After changing `Code.gs`, create a new Apps Script deployment version so the live web app uses the latest access-code check.
 

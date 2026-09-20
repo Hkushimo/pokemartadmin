@@ -65,9 +65,9 @@ function saveAll(payload, accessCode) {
 }
 
 function authorize_(spreadsheet, accessCode) {
-  const expectedCode = settingsValue_(spreadsheet, 'admin_access_code');
+  const expectedCode = adminAccessCode_(spreadsheet);
   if (!expectedCode) {
-    throw new Error('Admin access code is not configured on the Settings tab.');
+    throw new Error('Admin access code is not configured in Settings!B7.');
   }
 
   if (String(accessCode || '') !== expectedCode) {
@@ -184,21 +184,13 @@ function findSettingsSheet_(spreadsheet) {
   return spreadsheet.getSheets().find((sheet) => normalizeHeader_(sheet.getName()) === 'settings') || null;
 }
 
-function settingsValue_(spreadsheet, key) {
+function adminAccessCode_(spreadsheet) {
   const sheet = findSettingsSheet_(spreadsheet);
   if (!sheet) {
     return '';
   }
 
-  const values = dataValues_(sheet);
-  const headers = values[0] || [];
-  const map = headerMap_(headers);
-  const settingColumn = firstHeader_(map, ['setting', 'key', 'name']) || 0;
-  const valueColumn = firstHeader_(map, ['value']) || 1;
-  const normalizedKey = normalizeHeader_(key);
-  const row = values.slice(1).find((item) => normalizeHeader_(item[settingColumn]) === normalizedKey);
-
-  return row ? String(row[valueColumn] || '').trim() : '';
+  return String(sheet.getRange('B7').getDisplayValue() || '').trim();
 }
 
 function migrateLegacyCodeStatus_(sheet) {
