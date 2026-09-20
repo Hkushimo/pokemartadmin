@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Pokemart Expo Admin</title>
-    <link rel="stylesheet" href="styles.css?v=admin-access-v1">
+    <link rel="stylesheet" href="styles.css?v=browser-passcode-v1">
   </head>
   <body>
     <section id="access-gate" class="access-gate" aria-labelledby="access-title">
@@ -94,11 +94,10 @@
     <iframe id="save-frame" name="save-frame" title="Sheet save target" hidden></iframe>
     <form id="save-form" method="post" target="save-frame" hidden>
       <input name="action" value="saveAll">
-      <input id="save-access-code" name="accessCode">
       <input id="payload-input" name="payload">
     </form>
 
-    <script src="config.js?v=admin-access-v1"></script>
-    <script src="app.js?v=admin-access-v1"></script>
+    <script src="config.js?v=browser-passcode-v1"></script>
+    <script src="app.js?v=browser-passcode-v1"></script>
   </body>
 </html>

@@ -27,7 +27,6 @@ const elements = {
   codeList: document.querySelector("#code-list"),
   codeCount: document.querySelector("#code-count"),
   saveForm: document.querySelector("#save-form"),
-  saveAccessCode: document.querySelector("#save-access-code"),
   payloadInput: document.querySelector("#payload-input"),
   saveFrame: document.querySelector("#save-frame")
 };
@@ -188,7 +187,7 @@ function loadSheetRows(url, timeoutMs = 10000) {
   });
 }
 
-function loadJsonp(url, accessCode, timeoutMs = 15000) {
+function loadJsonp(url, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
     const callbackName = `pokemartAdmin${Date.now()}${Math.random().toString(16).slice(2)}`;
     const script = document.createElement("script");
@@ -228,7 +227,7 @@ function loadJsonp(url, accessCode, timeoutMs = 15000) {
     };
 
     const separator = url.includes("?") ? "&" : "?";
-    script.src = `${url}${separator}action=loadAll&accessCode=${encodeURIComponent(accessCode)}&callback=${callbackName}&cacheBust=${Date.now()}`;
+    script.src = `${url}${separator}action=loadAll&callback=${callbackName}&cacheBust=${Date.now()}`;
     document.head.append(script);
   });
 }
@@ -238,7 +237,7 @@ async function loadData() {
   elements.saveButton.disabled = true;
 
   if (config.scriptUrl) {
-    const payload = await loadJsonp(config.scriptUrl, state.accessCode);
+    const payload = await loadJsonp(config.scriptUrl);
     if (!payload.ok) {
       throw new Error(payload.error || "The admin backend could not load sheet data.");
     }
@@ -287,6 +286,15 @@ async function unlockAdmin(accessCode) {
   state.accessCode = accessCode.trim();
   if (!state.accessCode) {
     throw new Error("Enter the admin access code.");
+  }
+
+  const expectedPasscode = String(config.passcode || "").trim();
+  if (!expectedPasscode) {
+    throw new Error("Admin passcode is not configured in config.js.");
+  }
+
+  if (state.accessCode !== expectedPasscode) {
+    throw new Error("Invalid admin passcode.");
   }
 
   setAccessStatus("Checking access...", "success");
@@ -460,7 +468,6 @@ function saveChanges() {
   }
 
   elements.payloadInput.value = JSON.stringify(payloadForSave());
-  elements.saveAccessCode.value = state.accessCode;
   elements.saveForm.action = config.scriptUrl;
   setStatus("Pushing changes to Google Sheets...");
   elements.saveButton.disabled = true;

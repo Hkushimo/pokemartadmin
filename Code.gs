@@ -5,9 +5,8 @@ const LEGACY_USED_CODE_COLOR = '#f4cccc';
 function doGet(event) {
   const action = event.parameter.action || 'loadAll';
   const callback = event.parameter.callback || 'callback';
-  const accessCode = event.parameter.accessCode || '';
   const payload = action === 'loadAll'
-    ? loadAll(accessCode)
+    ? loadAll()
     : { ok: false, error: 'Unknown action.' };
 
   return jsonp(callback, payload);
@@ -15,21 +14,19 @@ function doGet(event) {
 
 function doPost(event) {
   const payloadText = event.parameter.payload || '{}';
-  const accessCode = event.parameter.accessCode || '';
 
   try {
     const payload = JSON.parse(payloadText);
-    saveAll(payload, accessCode);
+    saveAll(payload);
     return json({ ok: true });
   } catch (error) {
     return json({ ok: false, error: error.message });
   }
 }
 
-function loadAll(accessCode) {
+function loadAll() {
   try {
     const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-    authorize_(spreadsheet, accessCode);
     const vendorSheet = findVendorSheet_(spreadsheet);
     const codeSheet = findCodeSheet_(spreadsheet);
     if (codeSheet) {
@@ -46,9 +43,8 @@ function loadAll(accessCode) {
   }
 }
 
-function saveAll(payload, accessCode) {
+function saveAll(payload) {
   const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-  authorize_(spreadsheet, accessCode);
   const vendorSheet = findVendorSheet_(spreadsheet);
   const codeSheet = findCodeSheet_(spreadsheet);
 
@@ -61,17 +57,6 @@ function saveAll(payload, accessCode) {
       throw new Error('Could not find an unused codes tab.');
     }
     updateCodes_(codeSheet, payload.codes);
-  }
-}
-
-function authorize_(spreadsheet, accessCode) {
-  const expectedCode = adminAccessCode_(spreadsheet);
-  if (!expectedCode) {
-    throw new Error('Admin access code is not configured in Settings!B7.');
-  }
-
-  if (String(accessCode || '') !== expectedCode) {
-    throw new Error('Invalid admin access code.');
   }
 }
 
@@ -178,19 +163,6 @@ function findCodeSheet_(spreadsheet) {
     const headers = firstRow_(sheet).map(normalizeHeader_);
     return name.includes('unused') || (name.includes('code') && headers.some((header) => header.includes('code')));
   }) || null;
-}
-
-function findSettingsSheet_(spreadsheet) {
-  return spreadsheet.getSheets().find((sheet) => normalizeHeader_(sheet.getName()) === 'settings') || null;
-}
-
-function adminAccessCode_(spreadsheet) {
-  const sheet = findSettingsSheet_(spreadsheet);
-  if (!sheet) {
-    return '';
-  }
-
-  return String(sheet.getRange('B7').getDisplayValue() || '').trim();
 }
 
 function migrateLegacyCodeStatus_(sheet) {
