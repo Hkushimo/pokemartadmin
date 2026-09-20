@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pokemart Expo Admin</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <img src="assets/pokemart-expo.png" alt="Pokemart Expo">
+          <div>
+            <p class="eyebrow">Pokemart Expo</p>
+            <h1>Admin</h1>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="refresh-button" class="secondary" type="button">Refresh</button>
+          <button id="save-button" type="button" disabled>Push Changes to Sheet</button>
+        </div>
+      </header>
+
+      <section class="status-panel" aria-live="polite">
+        <div>
+          <p class="eyebrow">Sheet Sync</p>
+          <p id="status-message">Loading sheet data...</p>
+        </div>
+        <span id="dirty-count" class="count-pill">No changes</span>
+      </section>
+
+      <section class="tabs" aria-label="Admin views">
+        <button class="tab active" type="button" data-view="vendors">Vendors</button>
+        <button class="tab" type="button" data-view="codes">Unused Codes</button>
+      </section>
+
+      <section id="vendors-view" class="view">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Vendor Assignments</p>
+            <h2>Emails, tables, and Wi-Fi codes</h2>
+          </div>
+          <p id="vendor-count" class="meta">0 vendors</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Vendor</th>
+                <th>Email</th>
+                <th>Table(s)</th>
+                <th>Wi-Fi Code(s)</th>
+              </tr>
+            </thead>
+            <tbody id="vendor-rows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="codes-view" class="view" hidden>
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Unused Codes</p>
+            <h2>Mark codes as used</h2>
+          </div>
+          <p id="code-count" class="meta">0 codes</p>
+        </div>
+        <div id="code-list" class="code-list"></div>
+      </section>
+    </main>
+
+    <iframe id="save-frame" name="save-frame" title="Sheet save target" hidden></iframe>
+    <form id="save-form" method="post" target="save-frame" hidden>
+      <input name="action" value="saveAll">
+      <input id="payload-input" name="payload">
+    </form>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
