@@ -1,4 +1,6 @@
 const SPREADSHEET_ID = '1Wl5Ta7PvSiAaX8VZ9N5Fu2IPd2RBCS3yrOCGYUegzE8';
+const UNUSED_CODE_COLOR = '#d9ead3';
+const USED_CODE_COLOR = '#f4cccc';
 
 function doGet(event) {
   const action = event.parameter.action || 'loadAll';
@@ -82,16 +84,26 @@ function readCodes_(sheet) {
   const headers = values[0] || [];
   const map = headerMap_(headers);
   const codeColumn = firstHeader_(map, ['code', 'wificode', 'wifiaccesscode', 'wifiaccesscodes']) || 0;
-  const usedColumn = firstHeader_(map, ['used', 'isused', 'redeemed']);
+  const legacyUsedColumn = firstHeader_(map, ['used', 'isused', 'redeemed']);
   const noteColumn = firstHeader_(map, ['note', 'notes', 'assignedto', 'vendor', 'email']);
+  const lastRow = Math.max(sheet.getLastRow(), 1);
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  const backgrounds = lastRow > 1
+    ? sheet.getRange(2, 1, lastRow - 1, lastColumn).getBackgrounds()
+    : [];
 
   return values.slice(1)
-    .map((row, index) => ({
-      rowNumber: index + 2,
-      code: row[codeColumn] || '',
-      used: usedColumn === undefined ? false : truthy_(row[usedColumn]),
-      note: noteColumn === undefined ? '' : row[noteColumn] || ''
-    }))
+    .map((row, index) => {
+      const rowColors = backgrounds[index] || [];
+      const hasColorState = rowColorIsUsed_(rowColors) || rowColorIsUnused_(rowColors);
+
+      return {
+        rowNumber: index + 2,
+        code: row[codeColumn] || '',
+        used: hasColorState ? rowColorIsUsed_(rowColors) : legacyUsedColumn !== undefined && truthy_(row[legacyUsedColumn]),
+        note: noteColumn === undefined ? '' : row[noteColumn] || ''
+      };
+    })
     .filter((item) => String(item.code).trim());
 }
 
@@ -117,10 +129,6 @@ function updateVendors_(sheet, vendors) {
 }
 
 function updateCodes_(sheet, codes) {
-  const values = dataValues_(sheet);
-  const headers = values[0] || [];
-  const map = headerMap_(headers);
-  const usedColumn = ensureUsedColumn_(sheet, headers, map);
   const lastColumn = Math.max(sheet.getLastColumn(), 1);
 
   codes.forEach((code) => {
@@ -130,8 +138,9 @@ function updateCodes_(sheet, codes) {
     }
 
     const used = Boolean(code.used);
-    sheet.getRange(rowNumber, usedColumn + 1).setValue(used ? 'TRUE' : '');
-    sheet.getRange(rowNumber, 1, 1, lastColumn).setFontLine(used ? 'line-through' : 'none');
+    const rowRange = sheet.getRange(rowNumber, 1, 1, lastColumn);
+    rowRange.setBackground(used ? USED_CODE_COLOR : UNUSED_CODE_COLOR);
+    rowRange.setFontLine('none');
   });
 }
 
@@ -154,17 +163,6 @@ function findCodeSheet_(spreadsheet) {
     const headers = firstRow_(sheet).map(normalizeHeader_);
     return name.includes('unused') || (name.includes('code') && headers.some((header) => header.includes('code')));
   }) || null;
-}
-
-function ensureUsedColumn_(sheet, headers, map) {
-  const existing = firstHeader_(map, ['used', 'isused', 'redeemed']);
-  if (existing !== undefined) {
-    return existing;
-  }
-
-  const nextColumn = Math.max(headers.length + 1, sheet.getLastColumn() + 1);
-  sheet.getRange(1, nextColumn).setValue('Used');
-  return nextColumn - 1;
 }
 
 function dataValues_(sheet) {
@@ -207,6 +205,18 @@ function normalizeHeader_(value) {
 
 function truthy_(value) {
   return ['true', 'yes', 'y', '1', 'used'].includes(String(value || '').trim().toLowerCase());
+}
+
+function rowColorIsUsed_(colors) {
+  return colors.some((color) => normalizeColor_(color) === USED_CODE_COLOR);
+}
+
+function rowColorIsUnused_(colors) {
+  return colors.some((color) => normalizeColor_(color) === UNUSED_CODE_COLOR);
+}
+
+function normalizeColor_(color) {
+  return String(color || '').trim().toLowerCase();
 }
 
 function jsonp(callback, payload) {

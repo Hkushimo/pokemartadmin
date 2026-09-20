@@ -14,6 +14,8 @@
   --gold: #ffd84d;
   --gold-deep: #f2b91f;
   --success: #94ffc9;
+  --unused-bg: #d9ead3;
+  --used-bg: #f4cccc;
   --danger: #ffc4c4;
 }
 
@@ -215,6 +217,16 @@ h2 {
   margin-bottom: 0;
 }
 
+.vendor-tools {
+  display: grid;
+  gap: 8px;
+  min-width: min(420px, 100%);
+}
+
+.vendor-tools .meta {
+  text-align: right;
+}
+
 .table-wrap {
   overflow-x: auto;
 }
@@ -270,17 +282,14 @@ tbody tr.changed {
   align-items: start;
   border: 1px solid rgba(120, 190, 255, 0.28);
   border-radius: 8px;
-  background: rgba(3, 15, 31, 0.42);
+  background: var(--unused-bg);
+  color: #0d2714;
   padding: 12px;
 }
 
 .code-item.used {
-  opacity: 0.56;
-  background: rgba(3, 15, 31, 0.72);
-}
-
-.code-item.used .code-text {
-  text-decoration: line-through;
+  background: var(--used-bg);
+  color: #3d1010;
 }
 
 .code-item input {
@@ -292,7 +301,7 @@ tbody tr.changed {
 
 .code-text {
   display: block;
-  color: #ffffff;
+  color: inherit;
   font-weight: 800;
   overflow-wrap: anywhere;
 }
@@ -300,7 +309,7 @@ tbody tr.changed {
 .code-note {
   display: block;
   margin-top: 4px;
-  color: var(--muted);
+  color: rgba(0, 0, 0, 0.62);
   font-size: 0.9rem;
 }
 
@@ -335,6 +344,10 @@ tbody tr.changed {
   .tabs {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .vendor-tools .meta {
+    text-align: left;
   }
 
   button {

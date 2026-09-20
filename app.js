@@ -5,6 +5,7 @@ const config = window.POKEMART_ADMIN_CONFIG || {};
 const state = {
   vendors: [],
   codes: [],
+  vendorSearch: "",
   dirtyVendorRows: new Set(),
   dirtyCodeRows: new Set()
 };
@@ -14,6 +15,7 @@ const elements = {
   dirtyCount: document.querySelector("#dirty-count"),
   saveButton: document.querySelector("#save-button"),
   refreshButton: document.querySelector("#refresh-button"),
+  vendorSearch: document.querySelector("#vendor-search"),
   vendorRows: document.querySelector("#vendor-rows"),
   vendorCount: document.querySelector("#vendor-count"),
   codeList: document.querySelector("#code-list"),
@@ -291,20 +293,25 @@ function inputCell(value, field, rowNumber, isTextArea = false) {
 
 function renderVendors() {
   elements.vendorRows.replaceChildren();
-  elements.vendorCount.textContent = `${state.vendors.length} vendor${state.vendors.length === 1 ? "" : "s"}`;
+  const visibleVendors = filteredVendors();
+  const total = state.vendors.length;
+  const visible = visibleVendors.length;
+  elements.vendorCount.textContent = state.vendorSearch
+    ? `${visible} of ${total} vendor${total === 1 ? "" : "s"}`
+    : `${total} vendor${total === 1 ? "" : "s"}`;
 
-  if (!state.vendors.length) {
+  if (!visibleVendors.length) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
     cell.colSpan = 4;
     cell.className = "empty";
-    cell.textContent = "No vendor rows were found.";
+    cell.textContent = state.vendors.length ? "No vendors match that search." : "No vendor rows were found.";
     row.append(cell);
     elements.vendorRows.append(row);
     return;
   }
 
-  for (const vendor of state.vendors) {
+  for (const vendor of visibleVendors) {
     const row = document.createElement("tr");
     row.dataset.vendorRow = vendor.rowNumber;
 
@@ -327,6 +334,30 @@ function renderVendors() {
   }
 }
 
+function filteredVendors() {
+  const terms = state.vendorSearch
+    .toLowerCase()
+    .split(/\s+/)
+    .map((term) => term.trim())
+    .filter(Boolean);
+
+  if (!terms.length) {
+    return state.vendors;
+  }
+
+  return state.vendors.filter((vendor) => {
+    const haystack = [
+      vendor.name,
+      vendor.alias,
+      vendor.email,
+      vendor.tables,
+      vendor.wifiCodes
+    ].join(" ").toLowerCase();
+
+    return terms.every((term) => haystack.includes(term));
+  });
+}
+
 function renderCodes() {
   elements.codeList.replaceChildren();
   elements.codeCount.textContent = `${state.codes.length} code${state.codes.length === 1 ? "" : "s"}`;
@@ -347,6 +378,7 @@ function renderCodes() {
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
+    checkbox.title = "Mark used";
     checkbox.checked = Boolean(code.used);
     checkbox.addEventListener("change", () => {
       code.used = checkbox.checked;
@@ -412,6 +444,10 @@ elements.refreshButton.addEventListener("click", () => {
     console.error(error);
     setStatus(error.message);
   });
+});
+elements.vendorSearch.addEventListener("input", () => {
+  state.vendorSearch = elements.vendorSearch.value.trim();
+  renderVendors();
 });
 
 document.querySelectorAll(".tab").forEach((tab) => {
